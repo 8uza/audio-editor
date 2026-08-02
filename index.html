@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoundCraft - Client-Side Audio Editor</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- WaveSurfer.js CDN for Waveform Visualizations -->
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+  <!-- WaveSurfer Regions Plugin for Selection & Trimming -->
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-container">
+        <img src="assets/logo.svg" alt="SoundCraft Logo" class="logo-img">
+        <span class="app-title">SoundCraft <span class="badge">Studio</span></span>
+      </div>
+      <div class="header-actions">
+        <label for="file-input" class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M11 14.9861C11 15.5384 11.4477 15.9861 12 15.9861C12.5523 15.9861 13 15.5384 13 14.9861V7.82832L15.5858 10.4141C15.9763 10.8047 16.6095 10.8047 17 10.4141C17.3905 10.0236 17.3905 9.39043 17 8.99991L12.7071 4.70701C12.3166 4.31649 11.6834 4.31649 11.2929 4.70701L7 8.99991C6.60948 9.39043 6.60948 10.0236 7 10.4141C7.39052 10.8047 8.02369 10.8047 8.41421 10.4141L11 7.82832V14.9861Z" fill="currentColor"/><path d="M4 14C4 13.4477 3.55228 13 3 13C2.44772 13 2 13.4477 2 14V18C2 19.6569 3.34315 21 5 21H19C20.6569 21 22 19.6569 22 18V14C22 13.4477 21.5523 13 21 13C20.4477 13 20 13.4477 20 14V18C20 18.5523 19.5523 19 19 19H5C4.44772 19 4 18.5523 4 18V14Z" fill="currentColor"/></svg>
+          Open Audio
+        </label>
+        <input type="file" id="file-input" accept="audio/*" hidden>
+        <button id="btn-export-header" class="btn btn-success" disabled>
+          <svg class="icon" viewBox="0 0 24 24"><path d="M13 9.01392C13 8.46164 12.5523 8.01392 12 8.01392C11.4477 8.01392 11 8.46164 11 9.01392V16.1717L8.41421 13.5859C8.02369 13.1954 7.39052 13.1954 7 13.5859C6.60948 13.9764 6.60948 14.6096 7 15.0001L11.2929 19.293C11.6834 19.6835 12.3166 19.6835 12.7071 19.293L17 15.0001C17.3905 14.6096 17.3905 13.9764 17 13.5859C16.6095 13.1954 15.9763 13.1954 15.5858 13.5859L13 16.1717V9.01392Z" fill="currentColor"/><path d="M4 14C4 13.4477 3.55228 13 3 13C2.44772 13 2 13.4477 2 14V18C2 19.6569 3.34315 21 5 21H19C20.6569 21 22 19.6569 22 18V14C22 13.4477 21.5523 13 21 13C20.4477 13 20 13.4477 20 14V18C20 18.5523 19.5523 19 19 19H5C4.44772 19 4 18.5523 4 18V14Z" fill="currentColor"/></svg>
+          Export
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Drag & Drop Zone -->
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-content">
+          <svg class="drop-icon" viewBox="0 0 24 24"><path d="M12 4V16M12 4L8 8M12 4L16 8M4 17V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3>Drag & Drop audio file here</h3>
+          <p>Supports MP3, WAV, OGG, AAC, FLAC</p>
+        </div>
+      </div>
+
+      <!-- Waveform Section (Hidden initially) -->
+      <div id="editor-workspace" class="editor-workspace hidden">
+        <div class="file-meta-bar">
+          <span id="file-name" class="file-name">filename.mp3</span>
+          <span id="time-display" class="time-display">00:00 / 00:00</span>
+        </div>
+
+        <div class="waveform-card">
+          <div id="waveform"></div>
+          <div id="waveform-timeline"></div>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="playback-controls">
+          <button id="btn-stop" class="btn-circle" title="Stop">
+            <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="currentColor"/></svg>
+          </button>
+          <button id="btn-play" class="btn-circle btn-primary btn-large" title="Play/Pause">
+            <svg id="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+            <svg id="icon-pause" class="hidden" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>
+          </button>
+          <div class="zoom-control">
+            <label for="zoom-slider">Zoom:</label>
+            <input type="range" id="zoom-slider" min="10" max="200" value="50">
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Panel / Editor Tools -->
+    <section id="bottom-panel" class="bottom-panel disabled">
+      <div class="panel-tabs">
+        <button class="tab-btn active" data-tab="trim">Trim & Crop</button>
+        <button class="tab-btn" data-tab="effects">Effects</button>
+        <button class="tab-btn" data-tab="equalizer">Equalizer</button>
+        <button class="tab-btn" data-tab="export">Export Settings</button>
+      </div>
+
+      <div class="tab-contents">
+        <!-- Trim Tab -->
+        <div id="tab-trim" class="tab-content active">
+          <p class="tab-description">Drag a selection on the waveform above to mark a region.</p>
+          <div class="button-group">
+            <button id="btn-trim" class="btn btn-secondary">Crop Selection</button>
+            <button id="btn-clear-selection" class="btn btn-outline">Clear Selection</button>
+          </div>
+        </div>
+
+        <!-- Effects Tab -->
+        <div id="tab-effects" class="tab-content">
+          <div class="controls-grid">
+            <div class="control-group">
+              <label for="slider-bass">Bass Boost</label>
+              <input type="range" id="slider-bass" min="-12" max="12" value="0" step="0.5">
+              <span id="val-bass" class="val-label">0 dB</span>
+            </div>
+            <div class="control-group">
+              <label for="slider-treble">Treble Boost</label>
+              <input type="range" id="slider-treble" min="-12" max="12" value="0" step="0.5">
+              <span id="val-treble" class="val-label">0 dB</span>
+            </div>
+            <div class="control-group">
+              <label for="slider-reverb">Reverb Amount</label>
+              <input type="range" id="slider-reverb" min="0" max="1" value="0" step="0.05">
+              <span id="val-reverb" class="val-label">0.0</span>
+            </div>
+            <div class="control-group">
+              <label for="slider-compressor">Compressor Threshold</label>
+              <input type="range" id="slider-compressor" min="-60" max="0" value="0" step="1">
+              <span id="val-compressor" class="val-label">0 dB</span>
+            </div>
+          </div>
+          <div class="button-group">
+            <button id="btn-reset-effects" class="btn btn-outline btn-danger-text">Reset Effects</button>
+          </div>
+        </div>
+
+        <!-- Equalizer Tab -->
+        <div id="tab-equalizer" class="tab-content">
+          <div class="controls-grid">
+            <div class="control-group">
+              <label for="eq-low">Low (100Hz)</label>
+              <input type="range" id="eq-low" min="-12" max="12" value="0" step="0.5">
+              <span id="val-eq-low" class="val-label">0 dB</span>
+            </div>
+            <div class="control-group">
+              <label for="eq-mid">Mid (1kHz)</label>
+              <input type="range" id="eq-mid" min="-12" max="12" value="0" step="0.5">
+              <span id="val-eq-mid" class="val-label">0 dB</span>
+            </div>
+            <div class="control-group">
+              <label for="eq-high">High (10kHz)</label>
+              <input type="range" id="eq-high" min="-12" max="12" value="0" step="0.5">
+              <span id="val-eq-high" class="val-label">0 dB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Settings Tab -->
+        <div id="tab-export" class="tab-content">
+          <div class="export-options">
+            <div class="control-group">
+              <label for="export-format">Format</label>
+              <select id="export-format" class="select-input">
+                <option value="wav">WAV (Uncompressed)</option>
+                <option value="mp3" disabled>MP3 (Coming Soon)</option>
+              </select>
+            </div>
+            <button id="btn-export-tab" class="btn btn-success">Download Exported Audio</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notification Toasts -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
